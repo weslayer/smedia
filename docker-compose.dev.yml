@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: devuser
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_DB: socialapp
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  user_service:
+    build:
+      context: ./services/user_service
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./services/user_service:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://devuser:devpassword@postgres:5432/socialapp
+    depends_on:
+      - postgres
+
+  post_service:
+    build:
+      context: ./services/post_service
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./services/post_service:/app
+    ports:
+      - "8001:8000"
+    environment:
+      - DATABASE_URL=postgresql://devuser:devpassword@postgres:5432/socialapp
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data: 

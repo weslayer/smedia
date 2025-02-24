@@ -1,0 +1,18 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Copy requirements
+COPY requirements.txt .
+
+# Install dependencies using uv
+RUN /root/.cargo/bin/uv pip install -r requirements.txt
+
+# Copy source code
+COPY . .
+
+# Run the application with auto-reload
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--reload"] 
