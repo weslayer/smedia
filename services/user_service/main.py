@@ -1,13 +1,21 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from . import models, schemas, database, auth
-from .database import engine
-from .middleware import error_handler
+import models, schemas, database, auth
+from database import engine
+from middleware import error_handler
+from fastapi.middleware.cors import CORSMiddleware
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="User Service")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.middleware("http")(error_handler)
 
 @app.post("/users/", response_model=schemas.UserResponse)
@@ -62,7 +70,10 @@ async def update_user(
     return db_user
 
 @app.post("/users/login")
-async def login(user_credentials: schemas.UserCreate, db: Session = Depends(database.get_db)):
+async def login(
+    user_credentials: schemas.UserLogin,  # Create new schema for login
+    db: Session = Depends(database.get_db)
+):
     user = db.query(models.User).filter(models.User.email == user_credentials.email).first()
     if not user or not auth.auth_handler.verify_password(user_credentials.password, user.hashed_password):
         raise HTTPException(
@@ -71,4 +82,8 @@ async def login(user_credentials: schemas.UserCreate, db: Session = Depends(data
         )
     
     token = auth.auth_handler.create_access_token(user.id)
-    return {"access_token": token, "token_type": "bearer"} 
+    return {"access_token": token, "token_type": "bearer"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"} 

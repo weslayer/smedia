@@ -2,6 +2,10 @@ from datetime import datetime, timedelta
 from typing import Optional
 import jwt
 from passlib.context import CryptContext
+from fastapi.security import HTTPBearer
+from fastapi import HTTPException
+
+security = HTTPBearer()
 
 class AuthHandler:
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -16,7 +20,8 @@ class AuthHandler:
     def create_access_token(self, user_id: int) -> str:
         payload = {
             "user_id": user_id,
-            "exp": datetime.utcnow() + timedelta(days=1)
+            "exp": datetime.utcnow() + timedelta(days=1),
+            "iat": datetime.utcnow()
         }
         return jwt.encode(payload, self.secret, algorithm="HS256")
 

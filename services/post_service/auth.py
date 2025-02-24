@@ -2,11 +2,12 @@ from fastapi import HTTPException, Security, Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import jwt
 from datetime import datetime
+import os
 
 security = HTTPBearer()
 
 class AuthHandler:
-    secret = "your-secret-key"  # Should match user service secret
+    secret = os.getenv("JWT_SECRET_KEY", "your-secret-key")  # Get from env
 
     def decode_token(self, token: str) -> int:
         try:

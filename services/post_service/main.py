@@ -1,10 +1,10 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from . import models, schemas, database
-from .database import engine
-from .auth import get_current_user
-from .middleware import error_handler
+import models, schemas, database, auth
+from database import engine
+from auth import get_current_user
+from middleware import error_handler
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -82,4 +82,8 @@ async def delete_post(
     
     db.delete(db_post)
     db.commit()
-    return {"message": "Post deleted successfully"} 
+    return {"message": "Post deleted successfully"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"} 
