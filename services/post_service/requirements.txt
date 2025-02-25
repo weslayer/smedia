@@ -4,4 +4,6 @@ sqlalchemy==2.0.27
 pydantic==2.6.1
 PyJWT==2.8.0
 psycopg2-binary==2.9.9
-python-multipart 
+python-multipart
+boto3==1.34.34
+python-magic==0.4.27 

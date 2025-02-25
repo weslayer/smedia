@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+from fastapi import UploadFile
 
 class PostBase(BaseModel):
     content: str
@@ -8,6 +9,7 @@ class PostBase(BaseModel):
 
 class PostCreate(PostBase):
     user_id: int
+    media_file: Optional[UploadFile] = None
 
 class PostUpdate(PostBase):
     pass

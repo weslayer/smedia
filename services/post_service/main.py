@@ -1,10 +1,11 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List
 import models, schemas, database, auth
 from database import engine
 from auth import get_current_user
 from middleware import error_handler
+from s3 import s3_handler
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -13,18 +14,30 @@ app.middleware("http")(error_handler)
 
 @app.post("/posts/", response_model=schemas.PostResponse)
 async def create_post(
-    post: schemas.PostCreate, 
+    content: str,
+    user_id: int,
+    media_file: UploadFile = File(None),
     db: Session = Depends(database.get_db),
     current_user_id: int = Depends(get_current_user)
 ):
     # Verify the post is created by the authenticated user
-    if post.user_id != current_user_id:
+    if user_id != current_user_id:
         raise HTTPException(
             status_code=403,
             detail="Cannot create posts for other users"
         )
     
-    db_post = models.Post(**post.dict())
+    # Handle media upload if present
+    media_url = None
+    if media_file:
+        media_url = await s3_handler.upload_file(media_file)
+    
+    # Create post
+    db_post = models.Post(
+        content=content,
+        user_id=user_id,
+        media_url=media_url
+    )
     db.add(db_post)
     db.commit()
     db.refresh(db_post)
@@ -79,6 +92,10 @@ async def delete_post(
             status_code=403,
             detail="Cannot delete posts of other users"
         )
+    
+    # Delete associated media file if exists
+    if db_post.media_url:
+        s3_handler.delete_file(db_post.media_url)
     
     db.delete(db_post)
     db.commit()
