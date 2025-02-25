@@ -1,11 +1,12 @@
 from fastapi import FastAPI, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 import models, schemas, database, auth
 from database import engine
 from auth import get_current_user
 from middleware import error_handler
 from s3 import s3_handler
+from sqlalchemy import or_
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -15,28 +16,20 @@ app.middleware("http")(error_handler)
 @app.post("/posts/", response_model=schemas.PostResponse)
 async def create_post(
     content: str,
-    user_id: int,
-    media_file: UploadFile = File(None),
+    job_title: str,
+    resume_file: UploadFile = File(...),
     db: Session = Depends(database.get_db),
     current_user_id: int = Depends(get_current_user)
 ):
-    # Verify the post is created by the authenticated user
-    if user_id != current_user_id:
-        raise HTTPException(
-            status_code=403,
-            detail="Cannot create posts for other users"
-        )
-    
-    # Handle media upload if present
-    media_url = None
-    if media_file:
-        media_url = await s3_handler.upload_file(media_file)
+    # Upload resume
+    resume_url = await s3_handler.upload_file(resume_file, file_type="resume")
     
     # Create post
     db_post = models.Post(
         content=content,
-        user_id=user_id,
-        media_url=media_url
+        job_title=job_title,
+        resume_url=resume_url,
+        user_id=current_user_id
     )
     db.add(db_post)
     db.commit()
@@ -94,8 +87,8 @@ async def delete_post(
         )
     
     # Delete associated media file if exists
-    if db_post.media_url:
-        s3_handler.delete_file(db_post.media_url)
+    if db_post.resume_url:
+        s3_handler.delete_file(db_post.resume_url)
     
     db.delete(db_post)
     db.commit()
@@ -103,4 +96,30 @@ async def delete_post(
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"} 
+    return {"status": "healthy"}
+
+@app.get("/posts/search/", response_model=List[schemas.PostResponse])
+async def search_posts(
+    job_title: Optional[str] = None,
+    skills: Optional[str] = None,
+    min_experience: Optional[int] = None,
+    open_to_work: Optional[bool] = None,
+    skip: int = 0,
+    limit: int = 10,
+    db: Session = Depends(database.get_db)
+):
+    query = db.query(models.Post)
+    
+    if job_title:
+        query = query.filter(models.Post.job_title.ilike(f"%{job_title}%"))
+    if skills:
+        # Search for any of the provided skills
+        skill_list = [skill.strip() for skill in skills.split(',')]
+        skill_filters = [models.Post.skills.ilike(f"%{skill}%") for skill in skill_list]
+        query = query.filter(or_(*skill_filters))
+    if min_experience is not None:
+        query = query.filter(models.Post.experience_years >= min_experience)
+    if open_to_work is not None:
+        query = query.filter(models.Post.is_open_to_work == open_to_work)
+    
+    return query.order_by(models.Post.created_at.desc()).offset(skip).limit(limit).all() 

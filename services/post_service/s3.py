@@ -14,31 +14,36 @@ class S3Handler:
         )
         self.bucket_name = os.getenv('AWS_BUCKET_NAME')
 
-    async def upload_file(self, file: UploadFile) -> str:
+    async def upload_file(self, file: UploadFile, file_type: str = "resume") -> str:
         try:
             # Read file content
             content = await file.read()
             
             # Verify file type
             mime = magic.Magic(mime=True)
-            file_type = mime.from_buffer(content)
+            detected_type = mime.from_buffer(content)
             
-            if not file_type.startswith(('image/', 'video/')):
+            if file_type == "resume" and not detected_type == "application/pdf":
                 raise HTTPException(
                     status_code=400,
-                    detail="Invalid file type. Only images and videos are allowed."
+                    detail="Invalid file type. Only PDF files are allowed for resumes."
+                )
+            elif file_type == "image" and not detected_type.startswith('image/'):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid file type. Only images are allowed for profile pictures."
                 )
 
             # Generate unique filename
-            file_extension = os.path.splitext(file.filename)[1]
-            unique_filename = f"{uuid4()}{file_extension}"
+            file_extension = ".pdf" if file_type == "resume" else os.path.splitext(file.filename)[1]
+            unique_filename = f"{file_type}/{uuid4()}{file_extension}"
             
             # Upload to S3
             self.s3_client.put_object(
                 Bucket=self.bucket_name,
                 Key=unique_filename,
                 Body=content,
-                ContentType=file_type
+                ContentType=detected_type
             )
             
             # Generate URL
