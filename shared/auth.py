@@ -1,4 +1,4 @@
-from fastapi import HTTPException, Security, Depends
+from fastapi import HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import jwt
 from datetime import datetime
@@ -7,7 +7,7 @@ import os
 security = HTTPBearer()
 
 class AuthHandler:
-    secret = os.getenv("JWT_SECRET_KEY", "your-secret-key")  # Get from env
+    secret = os.getenv("JWT_SECRET_KEY", "your-secret-key")
 
     def decode_token(self, token: str) -> int:
         try:

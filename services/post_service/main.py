@@ -1,10 +1,10 @@
 from fastapi import FastAPI, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List, Optional
-import models, schemas, database, auth
-from database import engine
-from auth import get_current_user
-from middleware import error_handler
+import models, schemas
+from shared.database import engine, get_db
+from shared.auth import get_current_user
+from shared.middleware import error_handler
 from s3 import s3_handler
 from sqlalchemy import or_
 
@@ -18,7 +18,7 @@ async def create_post(
     content: str,
     job_title: str,
     resume_file: UploadFile = File(...),
-    db: Session = Depends(database.get_db),
+    db: Session = Depends(get_db),
     current_user_id: int = Depends(get_current_user)
 ):
     # Upload resume
@@ -37,14 +37,14 @@ async def create_post(
     return db_post
 
 @app.get("/posts/{post_id}", response_model=schemas.PostResponse)
-async def get_post(post_id: int, db: Session = Depends(database.get_db)):
+async def get_post(post_id: int, db: Session = Depends(get_db)):
     post = db.query(models.Post).filter(models.Post.id == post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     return post
 
 @app.get("/posts/user/{user_id}", response_model=List[schemas.PostResponse])
-async def get_user_posts(user_id: int, skip: int = 0, limit: int = 10, db: Session = Depends(database.get_db)):
+async def get_user_posts(user_id: int, skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     posts = db.query(models.Post)\
         .filter(models.Post.user_id == user_id)\
         .offset(skip)\
@@ -56,7 +56,7 @@ async def get_user_posts(user_id: int, skip: int = 0, limit: int = 10, db: Sessi
 async def update_post(
     post_id: int,
     post_update: schemas.PostUpdate,
-    db: Session = Depends(database.get_db)
+    db: Session = Depends(get_db)
 ):
     db_post = db.query(models.Post).filter(models.Post.id == post_id).first()
     if not db_post:
@@ -72,7 +72,7 @@ async def update_post(
 @app.delete("/posts/{post_id}")
 async def delete_post(
     post_id: int, 
-    db: Session = Depends(database.get_db),
+    db: Session = Depends(get_db),
     current_user_id: int = Depends(get_current_user)
 ):
     db_post = db.query(models.Post).filter(models.Post.id == post_id).first()
@@ -106,7 +106,7 @@ async def search_posts(
     open_to_work: Optional[bool] = None,
     skip: int = 0,
     limit: int = 10,
-    db: Session = Depends(database.get_db)
+    db: Session = Depends(get_db)
 ):
     query = db.query(models.Post)
     

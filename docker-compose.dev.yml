@@ -22,6 +22,7 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql://devuser:devpassword@postgres:5432/socialapp
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     depends_on:
       - postgres
 
@@ -30,15 +31,32 @@ services:
       context: ./services/post_service
       dockerfile: Dockerfile.dev
     volumes:
-      - ./services/post_service:/app
+      - ./services/post_service:/app/services/post_service
+      - ./shared:/app/shared
     ports:
       - "8001:8000"
     environment:
       - DATABASE_URL=postgresql://devuser:devpassword@postgres:5432/socialapp
-      - AWS_ACCESS_KEY_ID=your_access_key
-      - AWS_SECRET_ACCESS_KEY=your_secret_key
-      - AWS_REGION=your_region
-      - AWS_BUCKET_NAME=your_bucket_name
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+    depends_on:
+      - postgres
+
+  comment_service:
+    build:
+      context: ./services/comment_service
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./services/comment_service:/app/services/comment_service
+      - ./shared:/app/shared
+    ports:
+      - "8002:8000"
+    environment:
+      - DATABASE_URL=postgresql://devuser:devpassword@postgres:5432/socialapp
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     depends_on:
       - postgres
 
