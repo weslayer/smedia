@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: social-media-app
+  labels:
+    name: social-media-app
+    environment: base 
