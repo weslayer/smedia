@@ -2,8 +2,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from fastapi.responses import Response
-from .metrics import MetricsMiddleware, active_users, posts_created, likes_total, comments_total, error_count
-from .config import settings
+from metrics import MetricsMiddleware, active_users, posts_created, likes_total, comments_total, error_count
+from config import settings
 
 app = FastAPI(title="Analytics Service")
 
