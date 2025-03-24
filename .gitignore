@@ -24,6 +24,7 @@ wheels/
 venv/
 env/
 ENV/
+.venv/
 
 # IDE
 .idea/
@@ -41,3 +42,8 @@ ENV/
 
 # Docker
 .docker/
+
+# Terraform
+terraform/dev/.terraform
+terraform/dev/.terraform.lock.hcl
+terraform/dev/terraform.tfvars

@@ -1,11 +1,11 @@
-from pydantic import BaseModel, EmailStr, constr, validator
-import re
-from typing import Optional
+from pydantic import BaseModel, EmailStr, validator, Field
+from typing import Annotated, Optional
 from datetime import datetime
+import re
 
 class UserBase(BaseModel):
     email: EmailStr
-    username: constr(min_length=3, max_length=50)
+    username: Annotated[str, Field(min_length=3, max_length=50)]
     full_name: Optional[str] = None
     bio: Optional[str] = None
     profile_picture: Optional[str] = None
@@ -48,7 +48,7 @@ class UserLogin(BaseModel):
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
-    username: Optional[constr(min_length=3, max_length=50)] = None
+    username: Optional[Annotated[str, Field(min_length=3, max_length=50)]] = None
     password: Optional[str] = None
     full_name: Optional[str] = None
     bio: Optional[str] = None
