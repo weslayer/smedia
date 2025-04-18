@@ -19,9 +19,5 @@ K8s:
 * making deployments and services
 * helm charts
 
-Terraform:
-* aws vpc
-* aws eks
-
 etc:
 * bash script to post everything to aws ecr and deploy the application
